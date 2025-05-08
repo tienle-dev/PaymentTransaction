@@ -83,4 +83,9 @@ ALTER TABLE balance
 ALTER TABLE userinfo
     ADD CONSTRAINT FK_userinfo_credentials FOREIGN KEY (AccNo) REFERENCES credentials (AccNo);
 
+<<<<<<< HEAD
 COMMIT;
+=======
+COMMIT;
+
+>>>>>>> d15e71a0fec1137c24657ef76db1adb0317ecf35
