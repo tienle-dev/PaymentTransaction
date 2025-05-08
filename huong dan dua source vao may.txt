@@ -1,0 +1,23 @@
+Cách đưa source vào máy:
+Đầu tiên tạo một container trên docker bằng lệnh sau:
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Password_123#" -p 1445:1433 --name sql_server_container_2 -d mcr.microsoft.com/mssql/server
+
+Sau khi tạo container, mở SQL Server Management Studio 20, nhập chuỗi kết nối như sau:
+Server name: localhost,1445
+Authentication: chọn SQL Server Authentication
+Login: SA
+Password: Password_123#
+Bấm chọn Remember password
+Encryption: chọn Optional
+Bấm chọn trust server certificate
+Bấm Connect
+
+Sau khi kết nối thành công, tạo database có tên HETHONGTHANHTOAN, sau đó copy code sql từ file sql database.txt dán vào query để tạo các bảng và dữ liệu.
+
+Tiếp theo, bật Xampp. Ngay tại dòng Apache, nhấn nút Start để chạy.
+
+Tiếp theo tải file transaction trên GitHub về, dán vào thư mục này C:\xampp\htdocs
+
+Sau đó lên trình duyệt gõ link sau: localhost/transaction
+
+Chọn Register here để tạo tài khoản, nhập các thông tin và mật khẩu và chọn Register. Khi đăng nhập, nhập mã số tài khoản được cung cấp trong trang và mật khẩu mình đã ghi.

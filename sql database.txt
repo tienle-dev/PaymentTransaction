@@ -84,9 +84,3 @@ ALTER TABLE userinfo
     ADD CONSTRAINT FK_userinfo_credentials FOREIGN KEY (AccNo) REFERENCES credentials (AccNo);
 
 COMMIT;
-
-
-
--- Assuming the current DateTime values are in UTC, adjust to GMT+7
-UPDATE transactions
-SET DateTime = DATEADD(HOUR, 7, DateTime);
