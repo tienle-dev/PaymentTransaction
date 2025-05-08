@@ -85,8 +85,3 @@ ALTER TABLE userinfo
 
 COMMIT;
 
-
-
--- Assuming the current DateTime values are in UTC, adjust to GMT+7
-UPDATE transactions
-SET DateTime = DATEADD(HOUR, 7, DateTime);
