@@ -1,4 +1,10 @@
 Cách đưa source vào máy:
+
+===========
+Clip cách làm trên máy: https://drive.google.com/file/d/1ZzUD_Uu2OLiNmJBwiJiiI3HXlOhBKUMJ/view?usp=sharing
+===========
+
+
 Đầu tiên tạo một container trên docker bằng lệnh sau:
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Password_123#" -p 1445:1433 --name sql_server_container_2 -d mcr.microsoft.com/mssql/server
 
