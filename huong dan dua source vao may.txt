@@ -14,6 +14,15 @@ Bấm Connect
 
 Sau khi kết nối thành công, tạo database có tên HETHONGTHANHTOAN, sau đó copy code sql từ file sql database.txt dán vào query để tạo các bảng và dữ liệu.
 
+Tiếp theo mở đường link này: https://learn.microsoft.com/en-us/sql/connect/php/download-drivers-php-sql-server và chọn mục "Download Microsoft Drivers for PHP for SQL Server (Windows)" để tải file về, sau đó giải nén ra, chọn 2 file này: php_pdo_sqlsrv_81_ts_x64.dll, php_sqlsrv_81_ts_x64.dll rồi copy lại
+
+Tiếp theo, bật Xampp. Ngay tại dòng Apache, bấm nút Config, sau đó chọn <Browse> PHP, chọn thư mục ext, dán 2 file vừa copy ở trên vào thư mục ext. Quay lại Xampp, ngay tại dòng Apache, bấm nút Config, lần này chọn PHP(php.ini), sau đó xài Ctrl+F, trên thanh tìm kiếm gõ chữ ";extension=shmop". Ngay sau dòng này, hãy xuống dòng và copy 2 dòng này vào trong file php.ini:
+
+extension=php_pdo_sqlsrv_81_ts_x64.dll
+extension=php_sqlsrv_81_ts_x64
+
+Và nhớ xài Ctrl+S để lưu lại.
+
 Tiếp theo, bật Xampp. Ngay tại dòng Apache, nhấn nút Start để chạy.
 
 Tiếp theo tải file transaction trên GitHub về, dán vào thư mục này C:\xampp\htdocs
