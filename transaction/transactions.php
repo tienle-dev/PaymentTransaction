@@ -55,8 +55,6 @@ $stmt = sqlsrv_query($conn, $sql, array($accno, $accno));
                         <th>Amount</th>
                         <th>Remarks</th>
                         <th>DateTime</th>
-                        <th>Sender Balance</th>
-                        <th>Receiver Balance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,8 +65,6 @@ $stmt = sqlsrv_query($conn, $sql, array($accno, $accno));
                         <td><?php echo number_format($row['Amount']); ?></td>
                         <td><?php echo htmlspecialchars($row['Remarks']); ?></td>
                         <td><?php echo $row['DateTime']->format('Y-m-d H:i:s'); ?></td>
-                        <td><?php echo number_format($row['SenBalance']); ?></td>
-                        <td><?php echo number_format($row['RecBalance']); ?></td>
                     </tr>
                 <?php endwhile; ?>
                 </tbody>

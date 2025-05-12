@@ -1,64 +1,117 @@
+-- Begin transaction for schema creation
 BEGIN TRANSACTION;
 
--- Table: balance
-CREATE TABLE balance (
-    AccNo INT NOT NULL,
-    Balance DECIMAL(15,0) NULL,
-    Interest DECIMAL(15,0) NOT NULL DEFAULT 0,
-    CONSTRAINT PK_balance PRIMARY KEY (AccNo)
-);
-
 -- Table: credentials
+-- Stores user authentication information with hashed passwords
 CREATE TABLE credentials (
     AccNo INT NOT NULL IDENTITY(197,1),
-    Pass VARCHAR(100) NOT NULL,
+    Pass VARCHAR(256) NOT NULL, -- Increased length for hashed passwords
     CONSTRAINT PK_credentials PRIMARY KEY (AccNo)
 );
 
--- Table: transactions
-CREATE TABLE transactions (
-    Sender INT NOT NULL,
-    Receiver INT NOT NULL,
-    Amount DECIMAL(10,0) NOT NULL,
-    Remarks VARCHAR(50) NOT NULL,
-    DateTime DATETIME NOT NULL DEFAULT GETDATE(),
-    SenBalance DECIMAL(10,0) NOT NULL,
-    RecBalance DECIMAL(10,0) NOT NULL
-);
-
 -- Table: userinfo
+-- Stores user personal information
 CREATE TABLE userinfo (
     AccNo INT NOT NULL,
-    Name VARCHAR(50) NULL,
-    Address VARCHAR(100) NULL,
-    Email VARCHAR(64) NULL,
-    CONSTRAINT PK_userinfo PRIMARY KEY (AccNo)
+    Name NVARCHAR(50) NOT NULL, -- Changed to NVARCHAR to support Unicode (Vietnamese characters)
+    Address NVARCHAR(100) NULL, -- Optional: Changed to NVARCHAR for consistency with Vietnamese input
+    Email VARCHAR(64) NULL, -- Kept as VARCHAR since email typically doesn't need Unicode
+    CONSTRAINT PK_userinfo PRIMARY KEY (AccNo),
+    CONSTRAINT FK_userinfo_credentials FOREIGN KEY (AccNo) REFERENCES credentials (AccNo)
 );
 
+-- Table: balance
+-- Stores account balance and interest
+CREATE TABLE balance (
+    AccNo INT NOT NULL,
+    Balance DECIMAL(15,2) NOT NULL DEFAULT 0.00, -- Support decimal places, NOT NULL
+    Interest DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+    CONSTRAINT PK_balance PRIMARY KEY (AccNo),
+    CONSTRAINT FK_balance_credentials FOREIGN KEY (AccNo) REFERENCES credentials (AccNo),
+    CONSTRAINT CHK_NonNegativeBalance CHECK (Balance >= 0) -- Ensure non-negative balance
+);
 
--- Foreign keys
-ALTER TABLE balance
-    ADD CONSTRAINT FK_balance_credentials FOREIGN KEY (AccNo) REFERENCES credentials (AccNo);
+-- Table: transactions
+-- Stores transaction details
+CREATE TABLE transactions (
+    TransactionId INT NOT NULL IDENTITY(1,1), -- Unique transaction ID
+    Sender INT NOT NULL,
+    Receiver INT NOT NULL,
+    Amount DECIMAL(10,2) NOT NULL, -- Support decimal places
+    Remarks NVARCHAR(50) NOT NULL, -- Changed to NVARCHAR to support Vietnamese remarks
+    DateTime DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT PK_transactions PRIMARY KEY (TransactionId),
+    CONSTRAINT FK_transactions_sender FOREIGN KEY (Sender) REFERENCES balance (AccNo),
+    CONSTRAINT FK_transactions_receiver FOREIGN KEY (Receiver) REFERENCES balance (AccNo),
+    CONSTRAINT CHK_PositiveAmount CHECK (Amount > 0) -- Ensure positive transaction amount
+);
 
-ALTER TABLE userinfo
-    ADD CONSTRAINT FK_userinfo_credentials FOREIGN KEY (AccNo) REFERENCES credentials (AccNo);
+-- Indexes for performance optimization
+CREATE NONCLUSTERED INDEX IDX_balance_AccNo ON balance(AccNo);
+CREATE NONCLUSTERED INDEX IDX_transactions_Sender_Receiver ON transactions(Sender, Receiver, DateTime);
 
-ALTER TABLE transactions
-	ADD CONSTRAINT CHK_SufficientBalance
-	CHECK (SenBalance >= Amount);
-
+-- Commit schema creation
 COMMIT;
 
-CREATE TRIGGER UpdateBalance
-ON transactions
-AFTER INSERT
+-- Separate batch for stored procedure
+GO
+
+-- Stored Procedure: TransferMoney
+-- Handles money transfer with concurrency control and data integrity
+CREATE PROCEDURE TransferMoney
+    @Sender INT,
+    @Receiver INT,
+    @Amount DECIMAL(10,2),
+    @Remarks NVARCHAR(50) -- Changed to NVARCHAR to support Vietnamese remarks
 AS
 BEGIN
-    UPDATE balance
-    SET Balance = Balance - (SELECT Amount FROM inserted WHERE Sender = balance.AccNo)
-    WHERE AccNo IN (SELECT Sender FROM inserted);
+    SET NOCOUNT ON;
+    SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; -- Ensure strict isolation
+    BEGIN TRY
+        BEGIN TRANSACTION;
 
-    UPDATE balance
-    SET Balance = Balance + (SELECT Amount FROM inserted WHERE Receiver = balance.AccNo)
-    WHERE AccNo IN (SELECT Receiver FROM inserted);
+        -- Check if sender and receiver accounts exist and are different
+        IF NOT EXISTS (SELECT 1 FROM balance WHERE AccNo = @Sender)
+            THROW 50001, N'Tài khoản người gửi không tồn tại.', 1; -- Error message in Vietnamese
+        IF NOT EXISTS (SELECT 1 FROM balance WHERE AccNo = @Receiver)
+            THROW 50002, N'Tài khoản người nhận không tồn tại.', 1; -- Error message in Vietnamese
+        IF @Sender = @Receiver
+            THROW 50003, N'Người gửi và người nhận không được trùng nhau.', 1; -- Error message in Vietnamese
+
+        -- Lock and check sender's balance
+        DECLARE @SenderBalance DECIMAL(15,2);
+        SELECT @SenderBalance = Balance
+        FROM balance WITH (UPDLOCK)
+        WHERE AccNo = @Sender;
+
+        IF @SenderBalance < @Amount
+            THROW 50004, N'Số dư không đủ.', 1; -- Error message in Vietnamese
+
+        -- Update sender's balance
+        UPDATE balance
+        SET Balance = Balance - @Amount
+        WHERE AccNo = @Sender;
+
+        -- Update receiver's balance
+        UPDATE balance
+        SET Balance = Balance + @Amount
+        WHERE AccNo = @Receiver;
+
+        -- Record transaction
+        INSERT INTO transactions (Sender, Receiver, Amount, Remarks, DateTime)
+        VALUES (@Sender, @Receiver, @Amount, @Remarks, GETDATE());
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK;
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        RAISERROR (@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH;
 END;
+GO
+
+
+EXEC TransferMoney @Sender = 197, @Receiver = 198, @Amount = 100.50, @Remarks = 'Test transfer';

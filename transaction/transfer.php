@@ -31,8 +31,8 @@ if (isset($_POST['submit'])) {
             sqlsrv_query($conn, "UPDATE balance SET Balance = ? WHERE AccNo = ?", array($new_sender_balance, $accno));
             sqlsrv_query($conn, "UPDATE balance SET Balance = ? WHERE AccNo = ?", array($new_rec_balance, $receiver));
 
-            sqlsrv_query($conn, "INSERT INTO transactions (Sender, Receiver, Amount, Remarks, SenBalance, RecBalance) VALUES (?, ?, ?, ?, ?, ?)",
-                array($accno, $receiver, $amount, $remarks, $new_sender_balance, $new_rec_balance));
+            sqlsrv_query($conn, "INSERT INTO transactions (Sender, Receiver, Amount, Remarks) VALUES (?, ?, ?, ?)",
+                array($accno, $receiver, $amount, $remarks));
 
             $msg = "Transfer successful!";
         } else {
